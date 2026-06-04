@@ -1,0 +1,24 @@
+{
+    "write_flash_args" : [ "--flash_mode", "dio",
+                           "--flash_size", "2MB",
+                           "--flash_freq", "80m" ],
+    "flash_settings" : {
+        "flash_mode": "dio",
+        "flash_size": "2MB",
+        "flash_freq": "80m"
+    },
+    "flash_files" : {
+        "0x0" : "bin/bootloader/bootloader.bin",
+        "0x10000" : "bin/mlx90900_esp32_s3_demo.bin",
+        "0x8000" : "bin/partition_table/partition-table.bin"
+    },
+    "bootloader" : { "offset" : "0x0", "file" : "bin/bootloader/bootloader.bin", "encrypted" : "false" },
+    "app" : { "offset" : "0x10000", "file" : "bin/mlx90900_esp32_s3_demo.bin", "encrypted" : "false" },
+    "partition-table" : { "offset" : "0x8000", "file" : "bin/partition_table/partition-table.bin", "encrypted" : "false" },
+    "extra_esptool_args" : {
+        "after"  : "hard_reset",
+        "before" : "default_reset",
+        "stub"   : true,
+        "chip"   : "esp32s3"
+    }
+}

@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ROS 2 workspace build artifacts
+build/
+install/
+log/
