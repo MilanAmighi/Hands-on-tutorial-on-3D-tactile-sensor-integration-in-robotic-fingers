@@ -1,0 +1,7 @@
+# ROS2 build artifacts
+Codes/ros2_ws/build/
+Codes/ros2_ws/install/
+Codes/ros2_ws/log/
+**/__pycache__/
+*.pyc
+*.egg-info/
