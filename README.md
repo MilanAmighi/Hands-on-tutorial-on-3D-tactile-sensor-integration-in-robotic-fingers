@@ -29,6 +29,9 @@ Through guided experiments, you will map force signals to interaction dynamics, 
 ![Full gripper overview](Pictures/Full_gripper.png)
 
 
+**Short movie of the tutorial at ICRA:** [▶️ Watch on YouTube](https://www.youtube.com/watch?v=7zQnEL_h0f4)
+
+**Video of the online presentation** [▶️ Watch on TEAMS](https://teams.microsoft.com/l/meetingrecap?driveId=b%21zqcyjt1iJkaQGxijUcYje_6S61EsN49FvicmkFP-FVrg83IyQRtcQreNWOVh0kbT&driveItemId=01SD4756NHBXSB63TKSJC2SJFYSD7L24TZ&sitePath=https%3A%2F%2Fvub-my.sharepoint.com%2F%3Av%3A%2Fg%2Fpersonal%2Fmilan_francois_t_amighi_vub_be%2FIQCnDeQfbmqSRakkuJD-vXJ5AWt7_Sot6uk0F6Lw_LJeW9A&fileUrl=https%3A%2F%2Fvub-my.sharepoint.com%2Fpersonal%2Fmilan_francois_t_amighi_vub_be%2FDocuments%2FOpnamen%2FHands-on+tutorial+at+ICRA-20260605_135938-Meeting+Recording.mp4%3Fweb%3D1&iCalUid=040000008200E00074C5B7101A82E00800000000E956D36017EEDC01000000000000000010000000A4F3DAEA47D1EE47820ECD58BEFD0608&threadId=19%3Ameeting_MWVkNDM2NTEtODNmMS00Y2MyLWIyY2ItYTJkNDM0ZmZmMzkx%40thread.v2&organizerId=8704d676-5740-447d-980e-deb1b636cdff&tenantId=695b7ca8-2da8-4545-a2da-42d03784e585&callId=7f0a72e9-91ca-4310-9682-178e908b1c4b&threadType=Meeting&meetingType=Scheduled&subType=RecapSharingLink_RecapCore)
 
 **Concept demonstration (ITF 2025 with imec):** [▶️ Watch on YouTube](https://www.youtube.com/watch?v=10evZqkg7gM&time_continue=62&source_ve_path=MjM4NTE&embeds_referring_euri=https%3A%2F%2Fmech.vub.ac.be%2F)
 
