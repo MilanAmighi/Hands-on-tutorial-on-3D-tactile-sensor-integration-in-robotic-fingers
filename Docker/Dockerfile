@@ -65,7 +65,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 RUN rosdep init || true
 
 USER ${USERNAME}
-WORKDIR /Icra_tutorial_3dsensors_ws
+WORKDIR /tutorial_3dsensors_ws
 
 # Pre-configure matplotlib to use TkAgg backend
 RUN mkdir -p /home/${USERNAME}/.config/matplotlib && \
