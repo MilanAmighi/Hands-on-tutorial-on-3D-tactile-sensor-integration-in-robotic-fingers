@@ -1,11 +1,11 @@
-# ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation
+# Hands-on Tutorial: 3D Tactile Sensor Integration in Robotic Fingers for Smart Manipulation - Electronics
 Folder containing circuit diagrams and electronics documentation.
 
 # ⚡ Electronics & Firmware
 Welcome to the electronics section of the Tactile Sensor Gripper ! This folder contains everything you need to build the electronic circuit, understand the high-level firmware, and flash the code to your ESP32.
 
 ## 📋 Table of Contents
-- [ICRA2026\_Tutorial\_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation](#icra2026_tutorial_3d-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation)
+- [Hands-on Tutorial: 3D Tactile Sensor Integration in Robotic Fingers for Smart Manipulation](#Hands-on Tutorial: 3D Tactile Sensor Integration in Robotic Fingers for Smart Manipulation)
 - [⚡ Electronics \& Firmware](#-electronics--firmware)
   - [📋 Table of Contents](#-table-of-contents)
   - [🔬 Overview](#-overview)
