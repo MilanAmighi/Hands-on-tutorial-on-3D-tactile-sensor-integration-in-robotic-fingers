@@ -62,7 +62,7 @@ pixi run flash
 ```
 To run it with Docker or with native installation:
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes/flash
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/python_codes/flash
 
 #To launch the code
 python3 flash.py
@@ -82,7 +82,7 @@ pixi run motor
 
 To run it with Docker or with native installation:
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/python_codes
 
 #To launch the code
 python3 Motor_initialisation.py
@@ -173,12 +173,12 @@ pixi run connected
 
 To run it with Docker or with native installation:
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/python_codes
 
 python3 simple_connected_mode.py
 
 #To launch on Windows, it would be:
-#cd \ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation\Codes\python_codes
+#cd \Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers\Codes\python_codes
 #python simple_connected_mode.py
 ```
 
@@ -215,12 +215,12 @@ pixi run burst-gui
 
 To run it with Docker or with native installation:
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/python_codes
 
 python3 BurstMode.py
 
 #To launch on Windows, it would be:
-#cd \ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation\Codes\python_codes
+#cd \Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers\Codes\python_codes
 #python BurstMode.py
 ```
 You should see something like this appears:
@@ -256,7 +256,7 @@ pixi run build
 To run it with Docker inside the container or with native installation:
 
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/ros2_ws
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/ros2_ws
 
 colcon build
 source install/setup.bash

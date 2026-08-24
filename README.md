@@ -67,7 +67,7 @@ Through guided experiments, you will map force signals to interaction dynamics, 
 
 ```bash
 git clone ...
-cd ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation
+cd Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers
 ```
 
 > ⚠️ **Windows users — long paths warning.** This repository contains deeply nested files. You **must** enable long paths in Git *before* cloning, or your checkout will fail:
@@ -116,7 +116,7 @@ pixi --version
 **A.2 — Set up the environment**, from the root of the repository:
 
 ```bash
-cd ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation
+cd Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers
 pixi install  # Downloads all ROS 2 and Python dependencies
 pixi shell    # Activates the isolated environment
 ```
@@ -141,7 +141,7 @@ Then run one with:
 pixi run <name-of-the-task>
 ```
 
-Multible task and codes are available in `/ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes`.
+Multible task and codes are available in `/Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes`.
 
 ---
 
@@ -165,7 +165,7 @@ cd Docker
 ./buildrun.sh
 ```
 
-`buildrun.sh` runs `build.sh` (builds the `docker3dsensors` image) followed by `run.sh` (starts the container with the serial devices, USB bus and X11 display forwarded, and the repository mounted at `/ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation`).
+`buildrun.sh` runs `build.sh` (builds the `docker3dsensors` image) followed by `run.sh` (starts the container with the serial devices, USB bus and X11 display forwarded, and the repository mounted at `/Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers`).
 
 **B.3 — Open extra terminals** in the *same running* container (some demos need two):
 
@@ -176,7 +176,7 @@ docker exec -it docker3dsensors bash
 **B.4 — Build the ROS 2 workspace**, inside the container:
 
 ```bash
-cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/ros2_ws
+cd /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/ros2_ws
 colcon build
 source install/setup.bash
 ```
