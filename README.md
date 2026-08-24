@@ -66,7 +66,7 @@ Through guided experiments, you will map force signals to interaction dynamics, 
 ### Step 1 — Clone the repository
 
 ```bash
-git clone ...
+git clone https://github.com/MilanAmighi/Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers.git
 cd Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers
 ```
 
