@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ros2_tactile_robot"
 version = "0.0.1"
-description = "ICRA 2026 Tutorial - Tactile Sensors"
+description = "Tutorial - Tactile Sensors in robotic fingers"
 authors = [
   { name = "TBD" },
 ]

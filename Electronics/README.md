@@ -5,7 +5,6 @@ Folder containing circuit diagrams and electronics documentation.
 Welcome to the electronics section of the Tactile Sensor Gripper ! This folder contains everything you need to build the electronic circuit, understand the high-level firmware, and flash the code to your ESP32.
 
 ## 📋 Table of Contents
-- [Hands-on Tutorial: 3D Tactile Sensor Integration in Robotic Fingers for Smart Manipulation](#hands-on-tutorial-3d-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation)
 - [⚡ Electronics \& Firmware](#-electronics--firmware)
   - [📋 Table of Contents](#-table-of-contents)
   - [🔬 Overview](#-overview)
