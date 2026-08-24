@@ -65,9 +65,9 @@ def run_test(args: argparse.Namespace) -> None:
         esp.startThreadBurstForce(frequency=args.burst_frequency)
         time.sleep(1)
 
-        # --- Move to position 1700 ---
-        print(f"Moving to position 1700 (speed={args.speed}, acc={args.acc})...")
-        esp.sendCommandMotor(position=1700, speed=args.speed, acc=args.acc)
+        # --- Move to position 1800 ---
+        print(f"Moving to position 1800 (speed={args.speed}, acc={args.acc})...")
+        esp.sendCommandMotor(position=1800, speed=args.speed, acc=args.acc)
 
         status = esp.acq_status
         if status is not None and (
