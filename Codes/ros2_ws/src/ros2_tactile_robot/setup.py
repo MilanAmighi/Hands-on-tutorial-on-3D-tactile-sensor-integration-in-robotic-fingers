@@ -27,7 +27,7 @@ setup(
     maintainer_email='Milan.Francois.T.Amighi@vub.be',
     description='ROS2 nodes for the 3D tactile sensor robotic finger system.',
     license='MIT',
-    tests_require=['pytest'],
+    #tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'esp_bridge_node    = ros2_tactile_robot.esp_bridge_node:main',

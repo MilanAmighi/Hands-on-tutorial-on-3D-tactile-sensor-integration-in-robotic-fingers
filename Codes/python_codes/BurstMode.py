@@ -34,8 +34,12 @@ def parse_args() -> argparse.Namespace:
                         help="Print each received frame as-is before decoding.")
     parser.add_argument("--no-motor-pot", action="store_true",
                         help="Disable automatic motor commands derived from the potentiometer.")
-    parser.add_argument("--force-scale", type=float, default=10.0,
-                        help="Force value at which the bar reaches full width (default: 10.0).")
+    parser.add_argument("--shear-scale", type=float, default=3.0,
+                        help="Shear force (Fx, Fy) at full bar deflection, in each "
+                             "direction (default: 3.0 N).")
+    parser.add_argument("--normal-scale", type=float, default=6.0,
+                        help="Normal force (Fz) at full bar deflection, in each "
+                             "direction (default: 6.0 N).")
     parser.add_argument("--poll-ms", type=int, default=50,
                         help="GUI refresh interval in milliseconds (default: 50).")
     return parser.parse_args()
@@ -80,7 +84,8 @@ class BurstModeGui:
         self,
         esp: "espDriver",
         poll_ms: int = 50,
-        force_scale: float = 50.0,
+        shear_scale: float = 2.0,
+        normal_scale: float = 5.0,
         no_motor_pot: bool = False,
         motor_debounce: int = _MOTOR_DEBOUNCE_LSB,
     ) -> None:
@@ -89,7 +94,10 @@ class BurstModeGui:
 
         self._esp = esp
         self._poll_ms = max(10, poll_ms)
-        self._force_scale = max(1.0, force_scale)
+        # Full-scale deflection per axis, in each direction: shear on Fx/Fy, normal on Fz. 
+        self._axis_scale = (max(0.1, shear_scale),
+                            max(0.1, shear_scale),
+                            max(0.1, normal_scale))
         self._no_motor_pot = no_motor_pot
         self._motor_debounce = motor_debounce
         self._last_motor_cmd_pot: int | None = None
@@ -200,12 +208,15 @@ class BurstModeGui:
                                    x0 + self._fc_col_w - 4,
                                    bar_y + self._fc_bar_h,
                                    fill=self._SURFACE1, outline="", width=0)
+                bar_xc = bar_x0 + self._fc_bar_max_w // 2
+                c.create_line(bar_xc, bar_y, bar_xc, bar_y + self._fc_bar_h,
+                              fill=self._SUBTEXT, width=1)
                 # Axis letter (left margin)
                 c.create_text(x0 + 4, mid_y, text=axis, fill=color,
                               font=("Segoe UI", 7, "bold"), anchor="w")
 
-                # Bar fill (initially zero-width at left)
-                bid = c.create_rectangle(bar_x0, bar_y + 3, bar_x0,
+                # Bar fill (initially zero-width, at the zero line)
+                bid = c.create_rectangle(bar_xc, bar_y + 3, bar_xc,
                                          bar_y + self._fc_bar_h - 3,
                                          fill=color, outline="", width=0)
                 # Numeric value (right-anchored, fixed position)
@@ -471,13 +482,18 @@ class BurstModeGui:
             for i in range(3):
                 bar_y = 24 + i * (bar_h + margin)
 
-                value = abs(float(force_vectors[s][i]) - self._tare_offsets[s][i]) if s < len(force_vectors) else 0.0
-                norm  = min(1.0, value / self._force_scale)
-                px    = int(norm * bar_max)
+                # Signed value: the sign carries the direction of the shear
+                # (Fx, Fy) and tells pushing from pulling on Fz.
+                value = (float(force_vectors[s][i]) - self._tare_offsets[s][i]) if s < len(force_vectors) else 0.0
+                norm  = max(-1.0, min(1.0, value / self._axis_scale[i]))
+                bar_xc = bar_x0 + bar_max // 2
+                px     = int(norm * (bar_max // 2))
 
+                # Grow right of the zero line when positive, left when negative.
+                x_lo, x_hi = (bar_xc, bar_xc + px) if px >= 0 else (bar_xc + px, bar_xc)
                 c.coords(self._bar_ids[s][i],
-                         bar_x0, bar_y + 3, bar_x0 + px, bar_y + bar_h - 3)
-                c.itemconfig(self._val_ids[s][i], text=f"{value:.2f}")
+                         x_lo, bar_y + 3, x_hi, bar_y + bar_h - 3)
+                c.itemconfig(self._val_ids[s][i], text=f"{value:+.2f}")
 
     def _draw_joystick(self, joy_x, joy_y, joy_btn) -> None:
         c          = self._joy_canvas
@@ -781,7 +797,8 @@ def run_test(args: argparse.Namespace) -> None:
         gui = BurstModeGui(
             esp,
             poll_ms=args.poll_ms,
-            force_scale=args.force_scale,
+            shear_scale=args.shear_scale,
+            normal_scale=args.normal_scale,
             no_motor_pot=args.no_motor_pot,
             motor_debounce=_MOTOR_DEBOUNCE_LSB,
         )

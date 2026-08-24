@@ -71,6 +71,20 @@ A reference STEP and STL of the Tactaxis® sensor body is included for alignment
 
 ---
 
+### 🫧 PDMS Sensor Cover (moulded)
+
+A soft silicone cover sits on top of each Tactaxis® sensor to **distribute the contact force more evenly across the four taxels**, instead of letting a point contact load a single taxel. It is not 3D printed: it is cast in a two-part mould, which is printed.
+
+| Part | Quantity | File |
+|---|---|---|
+| Tactaxis PDMS Cover *(cast, reference geometry)* | 2 | `stl/Tactaxis_PDMS_Cover.STL` · `step/Tactaxis_PDMS_Cover.STEP` |
+| Cover Mould — Bottom | 1 | `stl/Tactaxis_PDMS_Cover_Mold_Bottom.STL` · `step/…_Mold_Bottom.STEP` |
+| Cover Mould — Top | 1 | `stl/Tactaxis_PDMS_Cover_Mold_Top.STL` · `step/…_Mold_Top.STEP` |
+
+**Material:** the covers are cast in **SYLGARD™ 182 Silicone Elastomer** from Dow, a two-part PDMS with a hardness of **Shore 43A**. Only the two mould halves are 3D printed; the `Tactaxis_PDMS_Cover` file itself is the resulting part geometry, provided as a reference for CAD and for checking the fit in the fingertip.
+
+---
+
 ## 📡 Tactaxis® Sensor — Info & Dimensions
 
 The **Melexis Tactaxis® 3D force sensor** is a compact, automotive-grade Hall-effect sensor that simultaneously measures normal (Fz) and shear (Fx, Fy) forces. It is designed for integration into robotic fingertips where space and robustness are critical.

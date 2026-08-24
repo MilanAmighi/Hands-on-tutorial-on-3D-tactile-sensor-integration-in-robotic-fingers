@@ -117,8 +117,9 @@ def generate_launch_description():
         executable='gui_node',
         name='gui_node',
         parameters=[{
-            'poll_ms':    50,
-            'force_scale': 10.0,
+            'poll_ms':      50,
+            'shear_scale':  2.0,
+            'normal_scale': 5.0,
         }],
         condition=IfCondition(gui),
         output='screen',

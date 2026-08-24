@@ -103,7 +103,8 @@ class BurstModeGui:
         self,
         esp,
         poll_ms: int = 50,
-        force_scale: float = 6.0,
+        shear_scale: float = 2.0,
+        normal_scale: float = 5.0,
         no_motor_pot: bool = False,
         motor_debounce: int = _MOTOR_DEBOUNCE_LSB,
         wrench_callback=None,
@@ -113,7 +114,11 @@ class BurstModeGui:
 
         self._esp = esp
         self._poll_ms = max(10, poll_ms)
-        self._force_scale = max(1.0, force_scale)
+        # Full-scale deflection per axis, in each direction: shear on Fx/Fy,
+        # normal on Fz. Indexed by the axis order used everywhere below.
+        self._axis_scale = (max(0.1, shear_scale),
+                            max(0.1, shear_scale),
+                            max(0.1, normal_scale))
         self._no_motor_pot = no_motor_pot
         self._motor_debounce = motor_debounce
         self._last_motor_cmd_pot: int | None = None
@@ -220,10 +225,13 @@ class BurstModeGui:
                                    x0 + self._fc_col_w - 4,
                                    bar_y + self._fc_bar_h,
                                    fill=self._SURFACE1, outline="", width=0)
+                bar_xc = bar_x0 + self._fc_bar_max_w // 2
+                c.create_line(bar_xc, bar_y, bar_xc, bar_y + self._fc_bar_h,
+                              fill=self._SUBTEXT, width=1)
                 c.create_text(x0 + 4, mid_y, text=axis, fill=color,
                               font=("Segoe UI", 7, "bold"), anchor="w")
 
-                bid = c.create_rectangle(bar_x0, bar_y + 3, bar_x0,
+                bid = c.create_rectangle(bar_xc, bar_y + 3, bar_xc,
                                          bar_y + self._fc_bar_h - 3,
                                          fill=color, outline="", width=0)
                 vid = c.create_text(x0 + self._fc_col_w - 6, mid_y, text="0.00",
@@ -467,13 +475,18 @@ class BurstModeGui:
             for i in range(3):
                 bar_y = 24 + i * (bar_h + margin)
 
-                value = abs(float(force_vectors[s][i])) if s < len(force_vectors) else 0.0
-                norm  = min(1.0, value / self._force_scale)
-                px    = int(norm * bar_max)
+                # Signed value: the sign carries the direction of the shear
+                # (Fx, Fy) and tells pushing from pulling on Fz.
+                value = float(force_vectors[s][i]) if s < len(force_vectors) else 0.0
+                norm  = max(-1.0, min(1.0, value / self._axis_scale[i]))
+                bar_xc = bar_x0 + bar_max // 2
+                px     = int(norm * (bar_max // 2))
 
+                # Grow right of the zero line when positive, left when negative.
+                x_lo, x_hi = (bar_xc, bar_xc + px) if px >= 0 else (bar_xc + px, bar_xc)
                 c.coords(self._bar_ids[s][i],
-                         bar_x0, bar_y + 3, bar_x0 + px, bar_y + bar_h - 3)
-                c.itemconfig(self._val_ids[s][i], text=f"{value:.2f}")
+                         x_lo, bar_y + 3, x_hi, bar_y + bar_h - 3)
+                c.itemconfig(self._val_ids[s][i], text=f"{value:+.2f}")
 
     def _draw_joystick(self, joy_x, joy_y, joy_btn) -> None:
         c          = self._joy_canvas
@@ -777,11 +790,13 @@ class GuiNode(Node):
         super().__init__('gui_node')
 
         self.declare_parameter('poll_ms',      50)
-        self.declare_parameter('force_scale',  6.0)
+        self.declare_parameter('shear_scale',  2.0)
+        self.declare_parameter('normal_scale', 5.0)
         self.declare_parameter('no_motor_pot', True)
 
         poll_ms      = self.get_parameter('poll_ms').value
-        force_scale  = self.get_parameter('force_scale').value
+        shear_scale  = self.get_parameter('shear_scale').value
+        normal_scale = self.get_parameter('normal_scale').value
         no_motor_pot = self.get_parameter('no_motor_pot').value
 
         self._motor_pub    = self.create_publisher(Float32MultiArray, '/motor/command',               10)
@@ -805,8 +820,9 @@ class GuiNode(Node):
         self.create_subscription(Int32,             '/esp/motor_position',
                                  self._on_motor_pos, 10)
 
-        self._poll_ms     = poll_ms
-        self._force_scale = force_scale
+        self._poll_ms      = poll_ms
+        self._shear_scale  = shear_scale
+        self._normal_scale = normal_scale
         self._no_motor_pot = no_motor_pot
 
         self.get_logger().info('GUI node ready, opening window.')
@@ -866,7 +882,8 @@ class GuiNode(Node):
         gui = BurstModeGui(
             self._proxy,
             poll_ms=self._poll_ms,
-            force_scale=self._force_scale,
+            shear_scale=self._shear_scale,
+            normal_scale=self._normal_scale,
             no_motor_pot=self._no_motor_pot,
             motor_debounce=_MOTOR_DEBOUNCE_LSB,
             wrench_callback=_wrench_cb,

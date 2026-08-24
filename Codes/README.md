@@ -1,6 +1,8 @@
 # 🤖 Codes
 
-This folder contains all the software for the tutorial: a ROS 2 package (`ros2_tactile_robot`) and standalone Python scripts. The ROS 2 stack runs on **ROS 2 Humble** inside the provided Docker container; the Python-only scripts can also be run directly on the host.
+This folder contains all the software for the tutorial: a ROS 2 package (`ros2_tactile_robot`) and standalone Python scripts. The ROS 2 stack runs on **ROS 2 Humble**, either through the Pixi environment or inside the provided Docker container; the Python-only scripts can also be run directly on the host.
+
+> 📌 Install your environment first — see [Step 3 of the main README](../README.md#step-3--install-your-software-environment) (Pixi, Docker or manual install).
 
 ---
 
@@ -52,10 +54,14 @@ F_g represents the gravitational force component along the gravity vector, as me
 ## 🚀 Before starting 
 ### 🔥 Flash the Firmware 
 
-If the ESP32 has not been flashed yet, run the flashing script (requires `esptool`):
+If the ESP32 has not been flashed yet, run the flashing script (requires `esptool`).
 
+To run it with Pixi:
 ```bash
-#Using docker
+pixi run flash
+```
+To run it with Docker or with native installation:
+```bash
 cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes/flash
 
 #To launch the code
@@ -67,13 +73,23 @@ python3 flash.py
 
 Run this script first to confirm the serial link is working and bring the motor to its reference position before attaching it to the gripper.
 
+
+To run it with Pixi:
 ```bash
-#On docker
+pixi run motor
+```
+
+
+To run it with Docker or with native installation:
+```bash
 cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
 
 #To launch the code
 python3 Motor_initialisation.py
 ```
+
+> With Pixi, the optional arguments below are passed after `--`, e.g. `pixi run motor -- -p /dev/ttyUSB0`.
+
 Optional arguments:
 
 | Flag | Default | Description |
@@ -87,7 +103,7 @@ Optional arguments:
 
 ## 🕹️ Gripper Operating Modes
 
-The gripper firmware exposes three top-level modes, selectable from the on-board LCD menu: independent, connected and view forces mode.
+Once the LCD on the gripper is on, the joystick can be used to navigate between modes. From the initial menu, pressing the joystick like a button opens the mode selection menu. The gripper firmware exposes three top-level modes, selectable from the on-board LCD menu: independent, connected and view forces mode.
 
 <p align="center"><img src="../Pictures/Selection_mode.png" width="500"/></p>
 
@@ -98,7 +114,7 @@ Requires only the power supply, no USB-C cable to the computer is needed. You wi
 | Sub-mode | Description |
 |---|---|
 | **Manual** | Control motor position directly with the joystick. Live normal force Fn and gravity force Fg readings are shown on the LCD. |
-| **Adaptive** | Control the target grasp force with the potentiometer. A PD controller tracks the force setpoint; Kp and Kd gains change automatically depending on the selected object type (fragile plastic cup, deformable sponge, rigid wood cube). Use the joystick to switch between objects. |
+| **Adaptive** | Control the target grasp force with the potentiometer. A PD controller tracks the force setpoint; Kp and Kd gains change automatically depending on the selected object type (fragile plastic cup, deformable sponge, rigid wood cube). Use the joystick to switch between objects moving it left or right. |
 | **Reset** | Return to the main menu. |
 
 <p align="center"><img src="../Pictures/Independent_mode.png" width="500"/></p>
@@ -107,13 +123,13 @@ In **Manual** mode, the joystick controls the gripper position while live Fn and
 
 <p align="center"><img src="../Pictures/Manual_mode.png" width="500"/></p>
 
-In **Adaptive** mode, the potentiometer sets the target grasp force. The PD controller adjusts the motor position to maintain that force, with gains tuned automatically based on the object selected with the joystick.
+In **Adaptive** mode, the potentiometer sets the target grasp force. The PD controller adjusts the motor position to maintain that force, with gains tuned automatically based on the object selected with the joystick moving it left or right.
 
 <p align="center"><img src="../Pictures/Adaptive_mode.png" width="500"/></p>
 
 ### 2. 🔌 Connected Mode
 
-The gripper waits for commands from the computer via USB-C serial. **Select this mode on the LCD before launching any ROS 2 node or Python script.**
+The gripper waits for commands from the computer via USB-C serial. **Select this mode on the LCD before launching any ROS 2 node or Python script. This screen must be visible before any commands or code can be launched from the computer.** After some time, the screen may automatically return to the initial menu. If this happens, you need to navigate back to this screen before relaunching another code.
 
 <p align="center"><img src="../Pictures/Connected_mode.png" width="500"/></p>
 
@@ -137,26 +153,12 @@ Expected output (the exact device name may vary):
 
 If you see `No such file or directory` for both, the cable is not connected or the driver is not loaded. Do not proceed until the device appears.
 
-##### 🐳 Start the Docker container
-
-From the `Docker/` folder at the repository root:
-
-```bash
-cd ~/ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Docker
-./buildrun.sh       # build image and start container (first time)
-```
-
-To open a second terminal inside the same running container:
-
-```bash
-docker exec -it docker3dsensors bash
-```
 
 ---
 
 #### 📡 Launching Scripts
 
-> ⚠️ Make sure the gripper LCD is set to **Connected** mode before running any of the commands below. The Python code also works on Windows, you just need to change the / in the command for \ (backslash).
+> ⚠️ Make sure the gripper LCD is set to **Connected** mode before running any of the commands below. The "Connected" mode screen must be visible before any commands or code can be launched from the computer. The Python code also works on Windows, you just need to change the / in the command for \ (backslash).
 
 #### Python only
 
@@ -164,8 +166,13 @@ docker exec -it docker3dsensors bash
 
 `simple_connected_mode.py` is the minimal starting point for working with the gripper from Python. It streams force data in burst mode and prints a live table to the terminal (no GUI, no ROS 2). It also includes a basic motor-follows-potentiometer example showing how to send commands back to the ESP32.
 
+To run it with Pixi:
 ```bash
-#When you are in the docker container
+pixi run connected
+```
+
+To run it with Docker or with native installation:
+```bash
 cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
 
 python3 simple_connected_mode.py
@@ -201,8 +208,13 @@ Press **Ctrl+C** to stop, the serial connection and background threads are close
 
 `BurstMode.py` opens a standalone GUI with real-time force bars, joystick, potentiometer, motor and IMU visualisation, and CSV recording. It connects directly to the ESP32 over serial (no ROS 2 code).
 
+To run it with Pixi:
 ```bash
-#When you are in the docker container
+pixi run burst-gui
+```
+
+To run it with Docker or with native installation:
+```bash
 cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/python_codes
 
 python3 BurstMode.py
@@ -222,7 +234,8 @@ Optional arguments:
 | Flag | Default | Description |
 |---|---|---|
 | `-p`, `--com-port` | auto-detect | Serial port of the ESP32 |
-| `--force-scale` | `10.0` | Force value at which the bar reaches full width |
+| `--shear-scale` | `2.0` | Shear force Fx/Fy at full bar deflection, in each direction |
+| `--normal-scale` | `5.0` | Normal force Fz at full bar deflection, in each direction |
 | `--poll-ms` | `50` | GUI refresh interval in milliseconds |
 | `--no-motor-pot` | off | Disable automatic motor follow from potentiometer |
 
@@ -233,27 +246,39 @@ CSV files are saved to `Codes/record_data/`.
 
 ##### 🔨 Build the ROS 2 workspace
 
-Inside the container:
+You need to run this process every time you change the ROS2 code for the changes to take effect.
+
+To run it with Pixi:
+```bash
+pixi run build
+```
+
+To run it with Docker inside the container or with native installation:
 
 ```bash
-#When you are in the docker container
 cd /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/ros2_ws
 
 colcon build
 source install/setup.bash
 ```
 
-
 ##### 🖐️ Tactile Finger Visualisation (ROS 2)
 
-Displays a live per-finger tactile map for the two-finger gripper. Run the ESP32 bridge first, then launch this node standalone:
+Displays a live per-finger tactile map for the two-finger gripper. Run the ESP32 bridge first, then launch this node standalone.
 
+To run it with Pixi:
+```bash
+#Starts both nodes in one terminal (Ctrl+C stops both)
+pixi run tactile-viz
+```
+
+To run it with Docker inside the container or with native installation:
 ```bash
 #On one terminal
 ros2 run ros2_tactile_robot esp_bridge_node 
 
 #Then on another terminal, go to the docker image with docker exec -it docker3dsensors bash
-#Then gode to ROS2 folder, build and source
+#Then go to ROS2 folder, build and source
 ros2 run ros2_tactile_robot tactile_finger_gui_node
 ```
 
@@ -268,13 +293,23 @@ You should see something like the window below, showing the forces on each taxel
 | Visual property | Sensor signal |
 |---|---|
 | Dot **size** | Normal force Fz — larger = more contact |
-| Dot **colour** | Fz magnitude — orange (light) → red (heavy) |
+| Dot **colour** | Fz magnitude — orange (light force) → red (heavy force) |
 | Dot **X displacement** | Lateral shear Fx |
 | Dot **Y displacement** | Lateral shear Fy |
 
 The bottom status bar displays the summed Fx, Fy, Fz and Mz for each finger in real time.
 
 **Button:** `Remove offsets` — captures the current readings as a zero baseline (tare). Press it before any measurement to remove drift or gravity offsets.
+
+**Potentiometer:** the gripper can also be opened and closed directly from this view, turning the potentiometer drives the motor, exactly as in the burst-mode GUI. The full potentiometer sweep (0–4095) is mapped onto the safe travel range, so the whole turn is usable and the commanded position never leaves that range.
+
+| Parameter | Default | Description |
+|---|---|---|
+| `motor_follows_pot` | `true` | Set to `false` to decouple the potentiometer from the motor |
+
+```bash
+ros2 run ros2_tactile_robot tactile_finger_gui_node --ros-args -p motor_follows_pot:=false
+```
 
 ---
 
@@ -292,10 +327,14 @@ Starts all nodes: ESP32 bridge, sensor processing, motor control, joystick, pote
 
 To launch the code, don't forget to build and run this:
 ```bash
+#for Pixi, from the repository root
+pixi run launch-all
+
+#With Docker / native, once the workspace is built and sourced
 ros2 launch ros2_tactile_robot full_system.launch.py
 ```
 
-Optional arguments:
+Optional arguments (use `pixi shell` first if you are on Pixi, then the plain `ros2 launch` command):
 
 | Argument | Default | Description |
 |---|---|---|
@@ -320,7 +359,7 @@ The controller uses the following structure:
 - **Exponential low-pass filter on `fn` and `fg`** (`alpha` parameter): smooths sensor noise before the error is computed. A higher `alpha` gives faster response but more noise; a lower value gives smoother output but slower tracking.
 - **Asymmetric deadband**: no motor command is sent when `|error| ≤ deadband_n`. This prevents the motor from hunting around the setpoint when the force is already close to the target.
 - **Minimum target guard**: the controller is fully inhibited when the target force is below 0.1 N (integral and derivative reset, and the gripper actively opens to release any residual contact force). This prevents the gripper from holding a leftover force when the potentiometer is at zero.
-- **Startup auto-zero**: The GUI **Remove offset** button re-publishes on `/pid/tare` at any moment — open the gripper, press the button to re-zero both the PID controller and the GUI plot/offsets.
+- **Startup auto-zero**: The GUI **Remove offset** button re-publishes on `/pid/tare` at any moment; open the gripper, press the button to re-zero both the PID controller and the GUI plot/offsets.
 
 The gains (Kp, Ki, Kd), the `alpha` and `deadband_n` parameters should be chosen based on the object being grasped. A reference table is provided below: stiffer objects tolerate lower gains, while softer or more delicate objects benefit from higher gains and tighter deadbands to track the target force more precisely.
 
@@ -333,6 +372,10 @@ The GUI displays four live values:
 - **Amp** : peak-to-peak amplitude of the Fg/Fn ratio over a rolling window of x samples. Spikes during slip events / vibrations and is a useful micro-slip indicator.
 
 ```bash
+#With Pixi, from the repository root
+pixi run pid
+
+#With Docker / native, once the workspace is built and sourced
 ros2 launch ros2_tactile_robot pid_force_control.launch.py
 ```
 
@@ -343,7 +386,7 @@ You should see something like this:
   <img src="../Pictures/PID_gui.gif" alt="PID Gui">
 </p>
 
-Optional arguments:
+Optional arguments (use `pixi shell` first if you are on Pixi, then the plain `ros2 launch` command):
 
 | Argument | Default | Description |
 |---|---|---|
@@ -355,7 +398,7 @@ Optional arguments:
 | `deadband_n` | `0.15` | Error deadband in N — no motor command within this band |
 | `window_s` | `20.0` | Rolling time window of the force plot in seconds |
 
-**Reference gain values (per object type):**
+**Reference gain values (per object type; they can be found in the BOM for test):**
 
 | Object | Kp | Kd | alpha | deadband |
 |---|---|---|---|---|

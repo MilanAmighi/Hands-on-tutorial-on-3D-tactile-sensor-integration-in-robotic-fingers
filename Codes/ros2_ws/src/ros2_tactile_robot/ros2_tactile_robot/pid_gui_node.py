@@ -20,6 +20,7 @@ import threading
 import time
 from collections import deque
 
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32MultiArray, Int32
@@ -40,9 +41,52 @@ _BLUE    = '#89b4fa'
 
 _WINDOW_S    = 20.0
 _MAX_PTS     = 10000
-_RECORD_DIR  = 'record_data'
+_MAX_DRAW_PTS = 1500   # points drawn per curve;
+_MIN_Y_SPAN   = 0.5    # smallest force range [N] the plot ever zooms in to
+
+
+class _Ring:
+
+    __slots__ = ('_cap', '_buf', '_n', '_end')
+
+    def __init__(self, capacity: int, dtype=float):
+        self._cap = int(capacity)
+        self._buf = np.zeros(self._cap * 2, dtype=dtype)
+        self._n   = 0    # valid samples currently held
+        self._end = 0    # index one past the newest sample
+
+    def append(self, value) -> None:
+        if self._end == self._buf.size:
+            self._buf[:self._cap] = self._buf[self._end - self._cap:self._end]
+            self._end = self._cap
+            self._n   = self._cap
+        self._buf[self._end] = value
+        self._end += 1
+        if self._n < self._cap:
+            self._n += 1
+
+    def view(self) -> np.ndarray:
+        return self._buf[self._end - self._n:self._end]
+
+    def clear(self) -> None:
+        self._n   = 0
+        self._end = 0
+
+    def __len__(self) -> int:
+        return self._n
 _N_WARMUP    = 50   # samples discarded so the filter + IMU stream settle first
 _N_CALIB     = 20   # samples averaged for the startup auto-zero baseline
+
+# Path to save recorded CSV files
+def _find_record_dir() -> str:
+    p = os.path.abspath(__file__)
+    while True:
+        p = os.path.dirname(p)
+        if os.path.basename(p) == 'Codes' or p == os.path.dirname(p):
+            break
+    return os.path.join(p, 'record_data')
+
+_RECORD_DIR = _find_record_dir()
 try:
     from ament_index_python.packages import get_package_share_directory
     _RESOURCES_DIR = os.path.join(
@@ -68,9 +112,9 @@ class ForcePlotGuiNode(Node):
 
         # Ring buffers
         self._lock   = threading.Lock()
-        self._t_buf  = deque(maxlen=_MAX_PTS)
-        self._fn_buf = deque(maxlen=_MAX_PTS)
-        self._fg_buf = deque(maxlen=_MAX_PTS)
+        self._t_buf  = _Ring(_MAX_PTS)
+        self._fn_buf = _Ring(_MAX_PTS)
+        self._fg_buf = _Ring(_MAX_PTS)
         self._t0: float | None = None
 
         # Startup auto-zero
@@ -148,7 +192,6 @@ class ForcePlotGuiNode(Node):
         self.get_logger().info('Force-plot GUI node ready.')
 
     # Butterworth filter 
-
     def _build_filter(self):
         from scipy.signal import butter, sosfilt_zi
         nyq    = 0.5 * self._filter_fs
@@ -169,7 +212,6 @@ class ForcePlotGuiNode(Node):
         return float(y[0]), zi_new
 
     # ROS2 callbacks
-
     def _on_force(self, msg: Float32MultiArray):
         data = msg.data
         n    = self._n_sensors
@@ -347,7 +389,6 @@ class ForcePlotGuiNode(Node):
                     self._ratio_amp = a * amp_inst + (1.0 - a) * self._ratio_amp
 
     # Zero offset 
-
     def _zero_offset(self):
         with self._lock:
             self._offset_fn = self._last_raw_fn
@@ -378,14 +419,12 @@ class ForcePlotGuiNode(Node):
         self.get_logger().info(f'PID gains → Kp={kp}  Ki={ki}  Kd={kd}')
 
     # GUI entry point (main thread)
-
     def run_gui(self):
         import tkinter as tk
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from matplotlib.animation import FuncAnimation
 
         root = tk.Tk()
         root.title('Force Monitor — Real-Time')
@@ -438,11 +477,16 @@ class ForcePlotGuiNode(Node):
             spine.set_edgecolor(_SUBTEXT)
         ax.axhline(0, color=_SUBTEXT, linewidth=0.6, linestyle='--')
         ax.grid(True, color='#45475a', linewidth=0.4)
+        ax.set_xlim(-self._window_s, 0.0)
+        ax.set_ylim(-1.0, 6.0)
 
-        line_fn,     = ax.plot([], [], color=_FX_COL,  linewidth=1.2, label='Fn')
-        line_fg,     = ax.plot([], [], color=_FY_COL,  linewidth=1.2, label='Fg')
+        line_fn,     = ax.plot([], [], color=_FX_COL,  linewidth=1.2, label='Fn',
+                               animated=True)
+        line_fg,     = ax.plot([], [], color=_FY_COL,  linewidth=1.2, label='Fg',
+                               animated=True)
         line_target, = ax.plot([], [], color=_GREEN,   linewidth=2.0,
-                               linestyle='--', label='Target', alpha=0.9)
+                               linestyle='--', label='Target', alpha=0.9,
+                               animated=True)
         ax.legend(facecolor=_SURFACE, edgecolor=_SUBTEXT,
                   labelcolor=_TEXT, loc='upper left', fontsize=8)
 
@@ -552,38 +596,87 @@ class ForcePlotGuiNode(Node):
         tk.Label(ctrl_frame, textvariable=self._sample_var,
                  bg=_BG, fg=_SUBTEXT, font=('Courier', 11)).pack(side='right', padx=4)
 
-        # Animation
-        def animate(_):
+        # Blit background, re-captured whenever the figure is fully redrawn
+        background = {'img': None}
+
+        def _grab_background(_evt=None):
+            background['img'] = canvas.copy_from_bbox(ax.bbox)
+
+        canvas.mpl_connect('draw_event', _grab_background)
+
+        axis_state = {'sec': None}
+
+        def _refresh_time_axis(t_now: float) -> bool:
+            sec = int(t_now)
+            if axis_state['sec'] == sec:
+                return False
+            axis_state['sec'] = sec
+            # Grow the window until it reaches window_s, as a scrolling plot does.
+            span  = min(self._window_s, max(2.0, t_now))
+            ticks = np.linspace(-span, 0.0, 6)
+            ax.set_xlim(-span, 0.0)
+            ax.set_xticks(ticks)
+            ax.set_xticklabels([f'{t_now + p:.1f}' for p in ticks])
+            return True
+
+        def animate(_=None):
             with self._lock:
-                t_data  = list(self._t_buf)
-                fn_data = list(self._fn_buf)
-                fg_data = list(self._fg_buf)
-                target  = self._pid_target
-                rate    = self._rate_hz
-                sc      = self._sample_count
+                t_view  = self._t_buf.view()
+                if t_view.size == 0:
+                    return
+                t_now = t_view[-1]
+
+                # Samples inside the visible window (times are monotonic).
+                i0 = int(np.searchsorted(t_view, t_now - self._window_s))
+                n_vis = t_view.size - i0
+                step = max(1, n_vis // _MAX_DRAW_PTS)
+                sl = slice(i0 + (n_vis - 1) % step, None, step)
+
+                t_plot  = t_view[sl] - t_now
+                fn_plot = self._fn_buf.view()[sl].copy()
+                fg_plot = self._fg_buf.view()[sl].copy()
+
+                target   = self._pid_target
+                rate     = self._rate_hz
+                sc       = self._sample_count
+                fn_now   = float(self._fn_buf.view()[-1])
                 fn_gauge = self._slip_fn
                 fg_gauge = self._slip_fg
                 ratio    = self._slip_ratio
                 amp      = self._ratio_amp
 
-            if not t_data:
-                return
+            line_fn.set_data(t_plot, fn_plot)
+            line_fg.set_data(t_plot, fg_plot)
+            line_target.set_data((-self._window_s, 0.0), (target, target))
 
-            t_now = t_data[-1]
-            t_min = max(0.0, t_now - self._window_s)
-            t_max = t_now + 0.5
+            lo = min(float(fn_plot.min()), float(fg_plot.min()), target)
+            hi = max(float(fn_plot.max()), float(fg_plot.max()), target)
 
-            line_fn.set_data(t_data, fn_data)
-            line_fg.set_data(t_data, fg_data)
-            line_target.set_data([t_min, t_max], [target, target])
+            if hi - lo < _MIN_Y_SPAN:
+                mid = 0.5 * (lo + hi)
+                lo, hi = mid - _MIN_Y_SPAN / 2, mid + _MIN_Y_SPAN / 2
 
-            fn_now = fn_data[-1]
+            cur_lo, cur_hi = ax.get_ylim()
+            span, cur_span = hi - lo, cur_hi - cur_lo
+            needs_redraw = _refresh_time_axis(t_now)
+            if lo < cur_lo or hi > cur_hi or span < 0.35 * cur_span:
+                margin = max(0.25, span * 0.1)
+                new_lo, new_hi = lo - margin, hi + margin
+                # Skip a no-op rescale, which would still force a full redraw.
+                if abs(new_lo - cur_lo) > 1e-6 or abs(new_hi - cur_hi) > 1e-6:
+                    ax.set_ylim(new_lo, new_hi)
+                    needs_redraw = True
+            if needs_redraw:
+                canvas.draw()           # repaints and re-grabs the background
 
-            ax.set_xlim(t_min, t_max)
-            all_vals = fn_data + fg_data + [target]
-            mn, mx   = min(all_vals), max(all_vals)
-            margin   = max(0.5, (mx - mn) * 0.1)
-            ax.set_ylim(mn - margin, mx + margin)
+            if background['img'] is None:
+                canvas.draw()
+            if background['img'] is not None:
+                canvas.restore_region(background['img'])
+                ax.draw_artist(line_fn)
+                ax.draw_artist(line_fg)
+                ax.draw_artist(line_target)
+                canvas.blit(ax.bbox)
 
             self._pid_vars['Target'].set(f'{target:+.3f}')
             self._pid_vars['Error'].set(f'{target - fn_now:+.3f}')
@@ -596,14 +689,26 @@ class ForcePlotGuiNode(Node):
             ratio_var.set(f'{ratio:.3f}')
             amp_var.set(f'{amp:.3f}')
 
-        self._anim = FuncAnimation(
-            fig, animate, interval=self._poll_ms, blit=False, cache_frame_data=False)
+        alive = {'run': True}
 
-        root.protocol('WM_DELETE_WINDOW', root.destroy)
+        def _tick():
+            if not alive['run']:
+                return
+            try:
+                animate()
+            except tk.TclError:
+                return          # window went away mid-frame
+            root.after(self._poll_ms, _tick)
+
+        def _on_close():
+            alive['run'] = False
+            root.destroy()
+
+        root.protocol('WM_DELETE_WINDOW', _on_close)
+        root.after(self._poll_ms, _tick)
         root.mainloop()
 
     # Record / Save 
-
     def _toggle_record(self):
         with self._lock:
             self._is_recording = not self._is_recording

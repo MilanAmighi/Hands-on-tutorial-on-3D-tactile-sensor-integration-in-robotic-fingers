@@ -83,7 +83,11 @@ class EspBridgeNode(Node):
         position = int(msg.data[0])
         speed    = int(msg.data[1])
         acc      = int(msg.data[2])
-        self._esp.sendCommandMotor(position=position, speed=speed, acc=acc)
+        try:
+            self._esp.sendCommandMotor(position=position, speed=speed, acc=acc)
+        except Exception as exc:
+            self.get_logger().warn(f'motor command not sent: {exc}',
+                                   throttle_duration_sec=2.0)
 
     # Main publish tick
     def _publish_all(self):

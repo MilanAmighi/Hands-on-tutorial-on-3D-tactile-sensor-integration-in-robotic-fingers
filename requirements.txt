@@ -2,3 +2,4 @@ numpy
 pyserial
 crc
 esptool
+git config core.longpaths true
