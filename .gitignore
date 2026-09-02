@@ -5,3 +5,15 @@ Codes/ros2_ws/log/
 **/__pycache__/
 *.pyc
 *.egg-info/
+
+# AI and Mac OS artifacts
+lancedb
+.DS_Store
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# colcon artifacts (any workspace root)
+build/
+log/
+install/
