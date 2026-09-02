@@ -8,6 +8,15 @@ END_BYTE = 0x7F
 ESCAPE_BYTE = 0x7D
 MAX_PAYLOAD_SIZE = 250
 
+
+class SerialLinkError(Exception):
+    """Raised when the serial link to the ESP32 fails (e.g. cable unplugged, port closed).
+
+    Wraps the underlying pyserial/OS error so callers only need to catch this one
+    type, regardless of which low-level exception pyserial happened to raise.
+    """
+
+
 class comm_LLL:
     """
     A class to handle communication with the ESP
@@ -108,7 +117,10 @@ class comm_LLL:
                 stuffed_frame.append(byte)
         
         stuffed_frame.append(END_BYTE)
-        self.ser.write(stuffed_frame)
+        try:
+            self.ser.write(stuffed_frame)
+        except (serial.SerialException, OSError) as e:
+            raise SerialLinkError(f"Failed to write to {self.ser.port}: {e}") from e
 
     def read_frame(self, timeout: float = 1.0):
         """
@@ -136,10 +148,13 @@ class comm_LLL:
         
         while time.time() - start_time < timeout:
             # Read any available data from the serial port and append to buffer
-            bytes_to_read = self.ser.in_waiting
-            if bytes_to_read > 0:
-                new_data = self.ser.read(bytes_to_read)
-                self._read_buffer.extend(new_data)
+            try:
+                bytes_to_read = self.ser.in_waiting
+                if bytes_to_read > 0:
+                    new_data = self.ser.read(bytes_to_read)
+                    self._read_buffer.extend(new_data)
+            except (serial.SerialException, OSError) as e:
+                raise SerialLinkError(f"Failed to read from {self.ser.port}: {e}") from e
 
             while True:
                 # Search for a complete frame (from START to END) in the buffer
@@ -208,7 +223,10 @@ class comm_LLL:
 
     def close(self):
         """Closes the serial connection."""
-        if self.ser and self.ser.is_open:
-            self.ser.close()
-            print("Serial port closed.")
+        try:
+            if self.ser and self.ser.is_open:
+                self.ser.close()
+                print("Serial port closed.")
+        except (serial.SerialException, OSError) as e:
+            print(f"Warning: error while closing serial port: {e}")
             

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ros2_tactile_robot"
 version = "0.0.1"
-description = "Tutorial - Tactile Sensors in robotic fingers"
+description = "ICRA 2026 Tutorial - Tactile Sensors"
 authors = [
   { name = "TBD" },
 ]
@@ -58,9 +58,7 @@ colcon-common-extensions = "*"
 [tool.pixi.tasks]
 build = { cmd = "colcon build --base-paths src --build-base build --install-base install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DPython_FIND_VIRTUALENV=ONLY -DPython3_FIND_VIRTUALENV=ONLY", cwd = "Codes/ros2_ws" }
 
-check-ros2 = { cmd = "bash -c 'source Codes/ros2_ws/install/setup.bash && bash ./check-ros2.sh'" }
-
-launch-all = { cmd = "bash -c 'source install/setup.bash && export AMENT_PREFIX_PATH=\"$PIXI_PROJECT_ROOT/Codes/ros2_ws/install/ros2_tactile_robot:$AMENT_PREFIX_PATH\" && ros2 launch ros2_tactile_robot full_system.launch.py'", cwd = "Codes/ros2_ws" }
+launch-all ={ cmd = "bash -c 'source install/setup.bash && export AMENT_PREFIX_PATH=\"$PIXI_PROJECT_ROOT/Codes/ros2_ws/install/ros2_tactile_robot:$AMENT_PREFIX_PATH\" && ros2 launch ros2_tactile_robot full_system.launch.py'", cwd = "Codes/ros2_ws" }
 
 pid = { cmd = "bash -c 'source Codes/ros2_ws/install/setup.bash && export AMENT_PREFIX_PATH=\"$PIXI_PROJECT_ROOT/Codes/ros2_ws/install/ros2_tactile_robot:$AMENT_PREFIX_PATH\" && ros2 launch ros2_tactile_robot pid_force_control.launch.py'" }
 
@@ -82,7 +80,6 @@ scripts = ["macos_rviz_ogre_libs.sh"]
 # ==========================================
 # WINDOWS OVERRIDES (Brute-Force Path Injection)
 # ==========================================
-check-ros2 = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\Codes\\ros2_ws\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && bash ./check-ros2.sh\"" }
 
 # NOTE: do not inject PYTHONPATH here. The package is already importable through the
 # editable pip install, and the extra entry is inherited by every child process rviz2 included.

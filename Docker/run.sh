@@ -2,7 +2,7 @@
 set -eu
 
 IMAGE_NAME="docker3dsensors"
-REPO_NAME="Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers"
+REPO_NAME="ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation"
 
 # Prefer: run.sh located at repo root
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"

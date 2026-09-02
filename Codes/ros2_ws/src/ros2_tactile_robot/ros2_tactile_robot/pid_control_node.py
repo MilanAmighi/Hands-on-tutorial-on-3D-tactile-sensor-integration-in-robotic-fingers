@@ -65,6 +65,15 @@ class PidControlNode(Node):
         self._motor_acc      = self.get_parameter('motor_acc').value
         self._enabled        = self.get_parameter('enabled').value
 
+        if self._kp == 0.0 and self._ki == 0.0 and self._kd == 0.0:
+            self.get_logger().warn(
+                'kp, ki and kd are all 0.0 (the launch-file default) — the '
+                'controller will compute zero correction and the motor will not '
+                'move. Pass kp:=/ki:=/kd:= on the command line, e.g. '
+                "'ros2 launch ros2_tactile_robot pid_force_control.launch.py "
+                "kp:=11 kd:=25' — see the reference gain table in Codes/README.md."
+            )
+
         self._filtered_force  = 0.0
         self._filtered_fg     = 0.0
         self._filtered_ratio  = 0.0

@@ -1,10 +1,11 @@
-# Electronics folder
+# ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation
 Folder containing circuit diagrams and electronics documentation.
 
 # ⚡ Electronics & Firmware
 Welcome to the electronics section of the Tactile Sensor Gripper ! This folder contains everything you need to build the electronic circuit, understand the high-level firmware, and flash the code to your ESP32.
 
 ## 📋 Table of Contents
+- [ICRA2026\_Tutorial\_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation](#icra2026_tutorial_3d-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation)
 - [⚡ Electronics \& Firmware](#-electronics--firmware)
   - [📋 Table of Contents](#-table-of-contents)
   - [🔬 Overview](#-overview)
@@ -18,7 +19,7 @@ Welcome to the electronics section of the Tactile Sensor Gripper ! This folder c
       - [Frame structure](#frame-structure)
       - [Commands (PC → ESP32)](#commands-pc--esp32)
       - [Response (ESP32 → PC)](#response-esp32--pc)
-      - [Burst frame payload (`0x15`) — 124 bytes total](#burst-frame-payload-0x15--124-bytes-total)
+      - [Burst frame payload (`0x15`) — 126 bytes total](#burst-frame-payload-0x15--126-bytes-total)
     - [Mode 2 — View Forces](#mode-2--view-forces)
   - [💻 Flashing the ESP32](#-flashing-the-esp32)
     - [Prerequisites](#prerequisites)
@@ -28,6 +29,8 @@ Welcome to the electronics section of the Tactile Sensor Gripper ! This folder c
 
 ## 🔬 Overview
 This section is powered by an ESP32 microcontroller, which handles the data acquisition from the tactile sensors, computes the 3d force and interfaces with the peripherals.
+
+> 📦 **Firmware source is not (yet) published in this repository.** Only the pre-built binary is included (see [Flashing the ESP32](#-flashing-the-esp32)) — the sections below describe the firmware's architecture and protocol for reference, but there is no `.c`/`.cpp` source to build or modify here. You can reflash the same provided binary, but cannot currently recompile or change the firmware yourself.
 
 ---
 
@@ -160,7 +163,7 @@ All traffic between the PC and the ESP32 uses the same framing layer in both dir
 └──────────┴────────┴──────────┴──────────────────┴──────────┴────────┘
 ```
 
-- **CRC-8** covers `[ID, LEN, PAYLOAD...]` (computed before byte stuffing).
+- **CRC-8** covers `[ID, LEN, PAYLOAD...]` (computed before byte stuffing) — for the burst frame (`0x15`) that is `1 (ID) + 1 (LEN) + 126 (PAYLOAD)` = **128 bytes** fed into the CRC-8.
 - **Byte stuffing** — any occurrence of a special byte inside `[ID … CRC-8]` is replaced with an escape sequence:
 
 | Original byte | Escaped sequence |
@@ -189,7 +192,7 @@ To decode: after receiving `0x7D`, XOR the next byte with `0x20` to recover the 
 
 ---
 
-#### Burst frame payload (`0x15`) — 124 bytes total
+#### Burst frame payload (`0x15`) — 126 bytes total
 
 ```text
 Offset  Size  Type          Field
@@ -215,6 +218,22 @@ Offset  Size  Type          Field
 122      4    int32 LE      motor_position
 ```
 
+**Byte-count check** — add up the fields yourself to confirm the 126 bytes:
+
+| Group | Fields | Bytes |
+| :--- | :--- | ---: |
+| Forces | 8 sensors × 3 axes × `f32` (4 B) | 8 × 3 × 4 = **96** |
+| Gravity | `gravity_x/y/z_lsb`, 3 × `int16` | 3 × 2 = **6** |
+| IMU/force health counters | `imu_success_count`, `imu_fail_count`, `force_success_count`, `force_fail_count`, 4 × `uint16` | 4 × 2 = **8** |
+| IMU last error | `imu_last_err`, `int16` | **2** |
+| Health flags | `imu_last_read_ok`, `force_last_read_ok`, 2 × `uint8` | 2 × 1 = **2** |
+| Joystick | `joystick_x`, `joystick_y` (`int16` each) + `joystick_button` + `_pad` (`uint8` each) | 2×2 + 2×1 = **6** |
+| Potentiometer | `potentiometer`, `int16` | **2** |
+| Motor position | `motor_position`, `int32` | **4** |
+| **Total payload** | | **96+6+8+2+2+6+2+4 = 126** |
+
+So the full unstuffed frame on the wire for a burst response is `START(1) + ID(1) + LEN(1) + PAYLOAD(126) + CRC-8(1) + END(1)` = **131 bytes** (before any byte stuffing, which can add extra bytes if `0x7E`/`0x7F`/`0x7D` appear inside `[ID … CRC-8]`).
+
 ---
 
 ### Mode 2 — View Forces
@@ -226,6 +245,8 @@ Displays live Fx, Fy, Fz and contact detection for both fingers directly on the 
 ## 💻 Flashing the ESP32
 
 The pre-built firmware binaries are included in the repository under `Codes/python_codes/flash/bin/`. A small Python helper script handles the entire flashing process — no ESP-IDF installation required.
+
+> ℹ️ The firmware **source code is not included** in this repository — only the compiled binaries needed to flash the board. This lets you get the gripper running for the tutorial, but there is nothing to inspect or modify beyond what's documented in [Firmware Architecture](#-firmware-architecture) above.
 
 ### Prerequisites
 

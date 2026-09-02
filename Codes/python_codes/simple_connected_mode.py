@@ -94,19 +94,13 @@ if __name__ == "__main__":
     # This block runs when the script is executed directly.
 
     # 1. Parse command-line arguments to get the COM port, if specified.
-    parser = argparse.ArgumentParser(description="Burst-mode force measurement test.")
-    parser.add_argument(
-        "-p",
-        "--com-port",
-        default=None,
-        help="Serial COM port (default: auto-detect ESP32-S3).",
-    )
+    args = parse_args()
 
     # 2. Use a 'with' statement to manage the espDriver lifecycle.
     # This ensures that the connection is properly started and, more importantly,
     # cleanly shut down (threads stopped, serial port closed) when the block is exited,
     # either normally or due to an error.
-    with espDriver(comPort=parser.parse_args().com_port) as esp:
+    with espDriver(comPort=args.com_port) as esp:
         # 3. Start the high-frequency data streaming threads.
         # This command tells the ESP32 to start sending sensor data and launches
         # background threads on the host PC to read and process this data.

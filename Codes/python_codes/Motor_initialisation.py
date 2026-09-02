@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Move motor to position 10, wait 5s, then return to position 0.")
+    parser = argparse.ArgumentParser(description="Move motor to position 1700, wait 5s, then return to position 1500.")
     parser.add_argument(
         "-p",
         "--com-port",

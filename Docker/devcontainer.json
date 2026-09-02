@@ -8,8 +8,8 @@
             "USERNAME": "docker"
         }
     },
-    "workspaceFolder": "/tutorial_3dsensors_ws",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/tutorial_3dsensors_ws,type=bind",
+    "workspaceFolder": "/Icra_tutorial_3dsensors_ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/Icra_tutorial_3dsensors_ws,type=bind",
     "customizations": {
         "vscode": {
             "extensions": [

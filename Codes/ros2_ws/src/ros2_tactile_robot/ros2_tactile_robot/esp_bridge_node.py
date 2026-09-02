@@ -145,8 +145,10 @@ class EspBridgeNode(Node):
             status_msg.data = json.dumps(esp.acq_status)
             self._pub_status.publish(status_msg)
 
-        # Wrenches + RViz markers
-        self._publish_wrenches(stamp)
+        # RViz finger mesh markers. Note: the /tactile/wrench/* WrenchStamped
+        # topics are NOT published here — see gui_node.py, which derives them
+        # from /esp/force.
+        self._publish_mesh_markers(stamp)
 
     def _publish_finger_frames(self):
         stamp = self.get_clock().now().to_msg()
@@ -209,8 +211,8 @@ class EspBridgeNode(Node):
 
         self._tf_static.sendTransform(transforms)
 
-    def _publish_wrenches(self, stamp):
-        # Mesh markers
+    def _publish_mesh_markers(self, stamp):
+        # RViz finger mesh markers (STL meshes), NOT WrenchStamped messages.
         ma = MarkerArray()
         for idx, (frame_id, mesh_file) in enumerate([
             ('frame_left_finger',  'package://ros2_tactile_robot/meshes/Tactaxis_sensor_left_finger.stl'),

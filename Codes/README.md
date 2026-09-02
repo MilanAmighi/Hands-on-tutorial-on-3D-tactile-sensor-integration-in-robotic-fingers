@@ -357,9 +357,9 @@ Starts the adaptive force controller together with a real-time **Fn / Fg** plot.
 
 The controller uses the following structure:
 - **Exponential low-pass filter on `fn` and `fg`** (`alpha` parameter): smooths sensor noise before the error is computed. A higher `alpha` gives faster response but more noise; a lower value gives smoother output but slower tracking.
-- **Asymmetric deadband**: no motor command is sent when `|error| ≤ deadband_n`. This prevents the motor from hunting around the setpoint when the force is already close to the target.
+- **Symmetric deadband**: no motor command is sent when `|error| ≤ deadband_n` (the same `deadband_n` magnitude applies on both the over-force and under-force side). This prevents the motor from hunting around the setpoint when the force is already close to the target.
 - **Minimum target guard**: the controller is fully inhibited when the target force is below 0.1 N (integral and derivative reset, and the gripper actively opens to release any residual contact force). This prevents the gripper from holding a leftover force when the potentiometer is at zero.
-- **Startup auto-zero**: The GUI **Remove offset** button re-publishes on `/pid/tare` at any moment; open the gripper, press the button to re-zero both the PID controller and the GUI plot/offsets.
+- **Startup auto-zero**: The GUI **Remove offset** button re-publishes on `/pid/tare` at any moment — open the gripper, press the button to re-zero both the PID controller and the GUI plot/offsets.
 
 The gains (Kp, Ki, Kd), the `alpha` and `deadband_n` parameters should be chosen based on the object being grasped. A reference table is provided below: stiffer objects tolerate lower gains, while softer or more delicate objects benefit from higher gains and tighter deadbands to track the target force more precisely.
 
@@ -394,9 +394,11 @@ Optional arguments (use `pixi shell` first if you are on Pixi, then the plain `r
 | `kp` | `0.0` | Proportional gain |
 | `ki` | `0.0` | Integral gain |
 | `kd` | `0.0` | Derivative gain |
-| `alpha` | `0.75` | LPF weight applied to `fn` and `fg` (0 = frozen, 1 = raw) |
-| `deadband_n` | `0.15` | Error deadband in N — no motor command within this band |
+| `alpha` | `0.80` | LPF weight applied to `fn` and `fg` (0 = frozen, 1 = raw) |
+| `deadband_n` | `0.20` | Error deadband in N — no motor command within this band |
 | `window_s` | `20.0` | Rolling time window of the force plot in seconds |
+
+> ⚠️ `kp`, `ki` and `kd` all default to `0.0`. If you launch `pid_force_control.launch.py` without overriding them, the controller computes zero correction and the motor will not move (the node also logs a warning to this effect on startup). Pick values from the reference table below and pass them explicitly, e.g. `kp:=11 kd:=25`.
 
 **Reference gain values (per object type; they can be found in the BOM for test):**
 
@@ -459,11 +461,6 @@ ros2 topic echo <name of the topic>
 | `/esp/potentiometer` | `std_msgs/Int32` | Raw potentiometer value (0–4095) |
 | `/esp/motor_position` | `std_msgs/Int32` | Current motor position |
 | `/esp/status` | `std_msgs/String` | JSON acquisition status from the ESP32 |
-| `/tactile/wrench/left_finger` | `geometry_msgs/WrenchStamped` | Summed wrench for the left finger |
-| `/tactile/wrench/right_finger` | `geometry_msgs/WrenchStamped` | Summed wrench for the right finger |
-| `/tactile/wrench/total` | `geometry_msgs/WrenchStamped` | Total gripper wrench (Tactaxis convention) |
-| `/tactile/wrench/left_0..3` | `geometry_msgs/WrenchStamped` | Per-sensor wrench, left finger (one topic per taxel) |
-| `/tactile/wrench/right_0..3` | `geometry_msgs/WrenchStamped` | Per-sensor wrench, right finger (one topic per taxel) |
 | `/tactile/markers` | `visualization_msgs/MarkerArray` | STL mesh markers for RViz |
 
 ### Subscribed by `esp_bridge_node`
@@ -471,3 +468,13 @@ ros2 topic echo <name of the topic>
 | Topic | Type | Description |
 |---|---|---|
 | `/motor/drive` | `std_msgs/Float32MultiArray` | Motor command `[position, speed, acceleration]` |
+
+### Published by `gui_node` (tared wrenches, derived from `/esp/force`)
+
+| Topic | Type | Description |
+|---|---|---|
+| `/tactile/wrench/left_finger` | `geometry_msgs/WrenchStamped` | Summed wrench for the left finger |
+| `/tactile/wrench/right_finger` | `geometry_msgs/WrenchStamped` | Summed wrench for the right finger |
+| `/tactile/wrench/total` | `geometry_msgs/WrenchStamped` | Total gripper wrench (Tactaxis convention) |
+| `/tactile/wrench/left_0..3` | `geometry_msgs/WrenchStamped` | Per-sensor wrench, left finger (one topic per taxel) |
+| `/tactile/wrench/right_0..3` | `geometry_msgs/WrenchStamped` | Per-sensor wrench, right finger (one topic per taxel) |

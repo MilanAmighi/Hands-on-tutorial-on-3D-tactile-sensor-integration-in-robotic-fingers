@@ -65,7 +65,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 RUN rosdep init || true
 
 USER ${USERNAME}
-WORKDIR /tutorial_3dsensors_ws
+WORKDIR /Icra_tutorial_3dsensors_ws
 
 # Pre-configure matplotlib to use TkAgg backend
 RUN mkdir -p /home/${USERNAME}/.config/matplotlib && \
@@ -75,7 +75,7 @@ RUN mkdir -p /home/${USERNAME}/.config/matplotlib && \
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/${USERNAME}/.bashrc
 
 # Auto-source the tactile robot workspace
-RUN echo "source /Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/ros2_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc && \
-    echo "export AMENT_PREFIX_PATH=/Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers/Codes/ros2_ws/install/ros2_tactile_robot:\$AMENT_PREFIX_PATH" >> /home/${USERNAME}/.bashrc
+RUN echo "source /ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/ros2_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc && \
+    echo "export AMENT_PREFIX_PATH=/ICRA2026_Tutorial_3D-tactile-sensor-integration-in-robotic-fingers-for-smart-manipulation/Codes/ros2_ws/install/ros2_tactile_robot:\$AMENT_PREFIX_PATH" >> /home/${USERNAME}/.bashrc
 
 CMD ["/bin/bash"]

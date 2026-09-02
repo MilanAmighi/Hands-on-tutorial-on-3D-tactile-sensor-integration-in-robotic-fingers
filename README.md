@@ -19,7 +19,7 @@ This hands-on tutorial introduces an affordable, compact, and robust 3D tactile 
   <img src="Pictures/Touch_sensor.gif" alt="Touch sensor demo">
 </p>
 
-Participants will work in small teams to:
+This tutorial allows the user to:
 - 🔩 Assemble a two-finger gripper ([PincOpen from Pollen Robotics](https://pollen-robotics.github.io/PincOpen/))
 - 🖐️ Integrate the Tactaxis® sensor into the fingertips
 - 🚀 Deploy the full system on a real robotic manipulation task
@@ -78,7 +78,7 @@ cd Hands-on-tutorial-on-3D-tactile-sensor-integration-in-robotic-fingers
 
 ### Step 2 — Assemble the gripper
 
-Follow `Gripper Kit - Assembly guide.pdf` to build the complete gripper.
+Follow `Gripper Kit - Assembly guide.pdf` to build the complete gripper. The list of material is in `Gripper-BOM.xlsx`, all the CAD design in the folder `Design` and the PCB schematics in the folder `Electronics`.
 
 ### Step 3 — Install your software environment
 

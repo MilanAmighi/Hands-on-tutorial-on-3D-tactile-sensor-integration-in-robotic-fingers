@@ -13,6 +13,11 @@ Publishers:
   /tactile/wrench/left_finger   geometry_msgs/WrenchStamped (tared left-finger wrench)
   /tactile/wrench/right_finger  geometry_msgs/WrenchStamped (tared right-finger wrench)
   /tactile/wrench/total         geometry_msgs/WrenchStamped (tared total wrench)
+  /tactile/wrench/left_0..3     geometry_msgs/WrenchStamped (tared per-taxel wrench, left finger)
+  /tactile/wrench/right_0..3    geometry_msgs/WrenchStamped (tared per-taxel wrench, right finger)
+
+Note: these are the only nodes that publish /tactile/wrench/*. esp_bridge_node
+publishes /tactile/markers (RViz mesh markers) but does NOT publish wrenches.
 """
 
 

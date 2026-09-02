@@ -1,10 +1,9 @@
 import time
 import struct
-from SerialLibrary.comm_LLL import comm_LLL
+from SerialLibrary.comm_LLL import comm_LLL, SerialLinkError
 import numpy as np
 import serial
 import serial.tools.list_ports
-import sys
 import crc
 import threading
 from queue import Queue, Empty
@@ -25,8 +24,6 @@ def find_esp32s3_port() -> str | None:
     return None
 
 
-CMD_ID_PING             = 0x01
-CMD_ID_PONG             = 0x02
 CMD_ID_I2C_ONESHOT      = 0x10
 RESP_ID_I2C_ONESHOT     = 0x11
 CMD_ID_STREAM_BURST     = 0x14
@@ -61,6 +58,9 @@ class espDriver(comm_LLL):
         self.Laddr = []
         self.is_streaming = False
         self.buffer_size = buffer_size
+        # True once connected; flipped to False the moment any serial I/O call
+        # detects the link is gone (cable unplugged, port closed, etc.).
+        self.connected = True
         config = crc.Configuration(
             width=8,
             polynomial=0x2f,
@@ -84,23 +84,32 @@ class espDriver(comm_LLL):
                     Pfound.append(port_tmp)
 
                 if len(Pfound) == 0:
-                    print("No COM port found, please check the connection and retry")
-                    sys.exit()
+                    raise RuntimeError(
+                        "No COM port found. Check the USB connection and retry, "
+                        "or pass the port explicitly (comPort=... / -p)."
+                    )
                 elif len(Pfound) == 1:
                     port = str(Pfound[0]).split(" ")[0]
                     print(f"1 COM port found, {port} automatically connecting")
                     self.port = port
                 else:
-                    print("Multiple COM ports found, requiring manual input")
-                    for i, k in enumerate(Pfound):
-                        print(f"Type {i} for port {k}")
-                    print("==================")
-                    idx = input("Please type the number and press enter: ")
-                    self.port = str(Pfound[int(idx)]).split(" ")[0]
+                    # Ambiguous: several ports, none matching the ESP32-S3 VID:PID.
+                    # Fail fast instead of blocking on input() — this constructor can run
+                    # inside a ROS 2 node (no attached terminal), where an input() prompt
+                    # would silently hang the whole launch with no visible prompt.
+                    port_list = ", ".join(str(p).split(" ")[0] for p in Pfound)
+                    raise RuntimeError(
+                        f"{len(Pfound)} COM ports found ({port_list}) and none matched the "
+                        "ESP32-S3 USB VID:PID (303A:1001). Specify the port explicitly, "
+                        "e.g. espDriver(comPort='COM5') or the script's -p/--com-port flag."
+                    )
         else:
             self.port = comPort
         super().__init__(port=self.port, baudrate=115200, timeout= 1.0)
 
+        # Discover which taxel sensors are actually present on the I2C bus before
+        # starting acquisition, so self.Laddr reflects the real hardware instead of
+        # an assumption. See scanI2Cbus() docstring for the fallback behaviour.
         self.scanI2Cbus()
 
         self.Nbuffer = buffer_size
@@ -138,8 +147,16 @@ class espDriver(comm_LLL):
         payload = bytes([_CMD_SCAN_I2C] + [0]*15) # Mode 2, rest of 16-byte command is 0
         response = None
         for _ in range(3):
-            self.send_frame(CMD_ID_I2C_ONESHOT, payload)
-            response = self.read_frame(timeout=2.0)
+            try:
+                self.send_frame(CMD_ID_I2C_ONESHOT, payload)
+                response = self.read_frame(timeout=2.0)
+            except SerialLinkError as e:
+                self.connected = False
+                print(
+                    f"Error: {e}. Using mandatory acquisition addresses."
+                )
+                self.Laddr = list(_MANDATORY_SENSOR_ADDRS)
+                return self.Laddr
             if response and response[0] == RESP_ID_I2C_ONESHOT:
                 break
             time.sleep(0.05)
@@ -179,23 +196,7 @@ class espDriver(comm_LLL):
             self.Laddr = list(_MANDATORY_SENSOR_ADDRS)
             return self.Laddr
 
-    def test_ping(self):
-        """
-        Tests the connection to the ESP32 by sending a PING command.
-
-        A successful test will receive a PONG response. This is useful for
-        verifying that the communication link is active and the firmware is responsive.
-        """
-        print("\n--- Testing Ping (0x01) ---")
-        self.send_frame(CMD_ID_PING)
-        response = self.read_frame()
-        if response and response[0] == CMD_ID_PONG:
-            print(f"Success! Received Pong: {response[1].decode()}")
-        else:
-            print(f"Failed. Response: {response}")
-
-
-    def decode_data_burst_force(self, msg: bytearray, num_addresses: int) -> tuple[np.ndarray, bool]:
+    def decode_data_burst_force(self, msg: bytearray, num_addresses: int) -> np.ndarray:
         """
         Decodes the force data burst payload from the ESP32.
 
@@ -213,9 +214,9 @@ class espDriver(comm_LLL):
 
         :param msg: The raw bytearray payload received from the ESP32.
         :param num_addresses: The number of I2C addresses being sampled.
-        :return: A tuple containing:
-                 - A NumPy array of force vectors, shaped (num_sensors, 3).
-                 - A boolean `reset_required` flag, which is currently always False but was intended for error handling.
+        :return: A NumPy array of force vectors, shaped (num_sensors, 3). On a message-length
+                 error this is an all-zero array and `self.isRunning` is set to False directly
+                 (see below) to stop the acquisition threads.
         """
         sensor_count = num_addresses * 2
         expected_length = sensor_count * 3 * 4
@@ -250,10 +251,10 @@ class espDriver(comm_LLL):
             if self.isRunning:
                 print("Stopping data stream due to message length error.")
                 self.isRunning = False
-            return np.zeros((sensor_count, 3)), True # Return empty array and request reset
+            return np.zeros((sensor_count, 3))
 
         force_vector = np.frombuffer(msg, dtype='<f4')
-        return force_vector.reshape((sensor_count, 3)), False
+        return force_vector.reshape((sensor_count, 3))
 
 
     def startThreadBurstForce(self, frequency: int = 500):
@@ -298,7 +299,13 @@ class espDriver(comm_LLL):
         payload.extend(self.Laddr)
         padding = [0] * (16 - len(payload))
         payload.extend(padding)
-        self.send_frame(CMD_ID_STREAM_BURST, payload)
+        try:
+            self.send_frame(CMD_ID_STREAM_BURST, payload)
+        except SerialLinkError as e:
+            self.connected = False
+            self.isRunning = False
+            print(f"Error: could not start burst stream: {e}")
+            return
         self.io_thread.start()
         self.processing_thread.start()
         print("Measurement thread started")
@@ -315,7 +322,16 @@ class espDriver(comm_LLL):
 
         while self.isRunning:
             # Wait for the first frame of a new data packet
-            response = self.read_frame(timeout=2.0)
+            try:
+                response = self.read_frame(timeout=2.0)
+            except SerialLinkError as e:
+                # Cable unplugged / port closed mid-stream: stop cleanly instead of
+                # letting the exception silently kill this thread while callers keep
+                # reading stale data from self.buffer with no indication anything is wrong.
+                self.connected = False
+                self.isRunning = False
+                print(f"Error: lost connection to ESP32 in I/O thread: {e}")
+                break
             if response and response[0] == RESP_ID_STREAM_BURST:
                 self.data_queue.put(response[1])
             else :
@@ -337,7 +353,7 @@ class espDriver(comm_LLL):
                 # Wait for up to 1 second for an item from the I/O thread
                 raw_data = self.data_queue.get(timeout=1.0)
 
-                data, reset_required = self.decode_data_burst_force(raw_data, num_addresses=num_addresses)
+                data = self.decode_data_burst_force(raw_data, num_addresses=num_addresses)
                 self.data = data
                 self.buffer = np.roll(self.buffer, -1, axis=0)
                 self.buffer[-1] = self.data
@@ -367,7 +383,13 @@ class espDriver(comm_LLL):
         """
         # Send stop command FIRST while the I/O thread is still reading, so the
         # ESP32's USB TX buffer stays drained and burst_aux_task can process the stop.
-        self.send_frame(CMD_ID_STREAM_STOP)
+        try:
+            self.send_frame(CMD_ID_STREAM_STOP)
+        except SerialLinkError as e:
+            # Connection is already gone; nothing to stop on the ESP32 side, just
+            # proceed to tear down the local threads/buffer below.
+            self.connected = False
+            print(f"Warning: could not send stop command (connection already lost?): {e}")
         time.sleep(0.15)  # Give ESP32 time to process stop before threads exit
         self.isRunning = False
         if self.io_thread and self.io_thread.is_alive():
@@ -375,12 +397,15 @@ class espDriver(comm_LLL):
         if self.processing_thread and self.processing_thread.is_alive():
             self.processing_thread.join()
 
-        flush_deadline = time.time() + 2.0
-        bytesBuffer = self.ser.in_waiting
-        while bytesBuffer > 0 and time.time() < flush_deadline:
-            self.ser.read(bytesBuffer)
-            time.sleep(0.001)
+        try:
+            flush_deadline = time.time() + 2.0
             bytesBuffer = self.ser.in_waiting
+            while bytesBuffer > 0 and time.time() < flush_deadline:
+                self.ser.read(bytesBuffer)
+                time.sleep(0.001)
+                bytesBuffer = self.ser.in_waiting
+        except (serial.SerialException, OSError) as e:
+            print(f"Warning: could not flush serial buffer (port already gone?): {e}")
 
     def sendCommandMotor(self,position=0,speed=1000,acc=0x0):
         """
@@ -399,7 +424,11 @@ class espDriver(comm_LLL):
         bytes_speed = speed.to_bytes(2, byteorder='big', signed=False)
         bytes_acc = bytes([acc])
         payload = bytes_position+bytes_speed+bytes_acc
-        self.send_frame(CMD_ID_MOTOR_CONTROL,payload)
+        try:
+            self.send_frame(CMD_ID_MOTOR_CONTROL, payload)
+        except SerialLinkError as e:
+            self.connected = False
+            print(f"Error: could not send motor command: {e}")
 
 
     def __enter__(self):

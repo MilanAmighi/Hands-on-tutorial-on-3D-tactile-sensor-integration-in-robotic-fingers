@@ -6,7 +6,6 @@ import threading
 import argparse
 from collections import deque
 from pathlib import Path
-from turtle import up
 
 # Make project-root imports work
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -34,12 +33,12 @@ def parse_args() -> argparse.Namespace:
                         help="Print each received frame as-is before decoding.")
     parser.add_argument("--no-motor-pot", action="store_true",
                         help="Disable automatic motor commands derived from the potentiometer.")
-    parser.add_argument("--shear-scale", type=float, default=3.0,
+    parser.add_argument("--shear-scale", type=float, default=2.0,
                         help="Shear force (Fx, Fy) at full bar deflection, in each "
-                             "direction (default: 3.0 N).")
-    parser.add_argument("--normal-scale", type=float, default=6.0,
+                             "direction (default: 2.0 N).")
+    parser.add_argument("--normal-scale", type=float, default=5.0,
                         help="Normal force (Fz) at full bar deflection, in each "
-                             "direction (default: 6.0 N).")
+                             "direction (default: 5.0 N).")
     parser.add_argument("--poll-ms", type=int, default=50,
                         help="GUI refresh interval in milliseconds (default: 50).")
     return parser.parse_args()
