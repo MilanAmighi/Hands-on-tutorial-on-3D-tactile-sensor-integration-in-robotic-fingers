@@ -95,7 +95,7 @@ The **Melexis Tactaxis® 3D force sensor** is a compact, automotive-grade Hall-e
 | Overall assembly height | ~6 mm (sensor + magnet housing) |
 | Number of taxels per sensor | 4 |
 
-> The sensor snaps into the **Removable Tip** cavity. The STEP file `step/Tactaxis_sensor.STEP` represents the sensor body and can be used as a reference when adapting the fingertip geometry.
+> The sensor snaps into the **Removable Tip** cavity. The STEP file `step/Tactaxis_Sensor.STEP` represents the sensor body and can be used as a reference when adapting the fingertip geometry.
 
 ---
 

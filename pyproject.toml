@@ -7,7 +7,7 @@ name = "ros2_tactile_robot"
 version = "0.0.1"
 description = "Tutorial - Tactile Sensors"
 authors = [
-  { name = "TBD" },
+  { name = "-" },
 ]
 requires-python = ">=3.12"
 
