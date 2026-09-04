@@ -125,7 +125,11 @@ def generate_launch_description():
         output='screen',
     )
 
-    # RViz2 (optional)
+    # RViz2 (optional). NOTE: on Windows, rviz2 reliably dies with exit code 3221226505
+    # (STATUS_STACK_BUFFER_OVERRUN, abort() from ucrtbase.dll) within a few seconds when
+    # spawned this way (as a child of ros2 launch's ExecuteProcess) -- reproduced with no
+    # other nodes running and regardless of cwd, so it's specific to how ros2 launch spawns
+    # child processes on Windows. rviz2 launched directly (no intermediate shell) is unaffected.
     rviz_node = ExecuteProcess(
         cmd=['rviz2', '-d', os.path.join(pkg_share, 'rviz', 'tactile_viz.rviz')],
         condition=IfCondition(rviz),

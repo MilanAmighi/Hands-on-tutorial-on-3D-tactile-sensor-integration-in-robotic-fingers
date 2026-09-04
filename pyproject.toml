@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ros2_tactile_robot"
 version = "0.0.1"
-description = "ICRA 2026 Tutorial - Tactile Sensors"
+description = "Tutorial - Tactile Sensors"
 authors = [
   { name = "TBD" },
 ]
 requires-python = ">=3.12"
 
-# These are your PyPI pip packages
+# PyPI pip packages
 dependencies = [
     "icecream>=2.1.3",
     "loguru>=0.7.3",
@@ -71,7 +71,7 @@ flash = { cmd = "python flash/flash.py", cwd = "Codes/python_codes" }
 
 
 # Repairs the Homebrew-hardcoded Ogre libraries so rviz2 can start.
-# Applies to osx-64 and osx-arm64; see the script header for details.
+# Applies to osx-64 and osx-arm64;
 [tool.pixi.target.osx.activation]
 scripts = ["macos_rviz_ogre_libs.sh"]
 
@@ -83,11 +83,18 @@ scripts = ["macos_rviz_ogre_libs.sh"]
 
 # NOTE: do not inject PYTHONPATH here. The package is already importable through the
 # editable pip install, and the extra entry is inherited by every child process rviz2 included.
-launch-all = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && ros2 launch ros2_tactile_robot full_system.launch.py\"", cwd = "Codes/ros2_ws" }
+#
+# NOTE: ROS_LOCALHOST_ONLY=1 restricts DDS discovery to the loopback interface. Everything
+# here runs on a single laptop, and loopback traffic bypasses Windows Firewall entirely, so
+# this avoids the "Windows Defender Firewall has blocked some features" dialog that
+# non-admin users can't click through.
+#
+# NOTE: rviz2 is started directly by launch_all_windows.ps1 rather than through
+# `ros2 launch`'s ExecuteProcess -- see that script for why (a Windows-only rviz2 crash).
+launch-all = { cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File launch_all_windows.ps1", cwd = "Codes/ros2_ws" }
 
-pid = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && ros2 launch ros2_tactile_robot pid_force_control.launch.py\"", cwd = "Codes/ros2_ws" }
+pid = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && set ROS_LOCALHOST_ONLY=1 && ros2 launch ros2_tactile_robot pid_force_control.launch.py\"", cwd = "Codes/ros2_ws" }
 
 # NOTE: cmd.exe uses '&' as a *sequential* separator, not as bash's background operator,
 # so the bridge must be started with 'start /b' or the GUI node would never run.
-tactile-viz = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && start /b ros2 run ros2_tactile_robot esp_bridge_node && ros2 run ros2_tactile_robot tactile_finger_gui_node\"", cwd = "Codes/ros2_ws" }
-
+tactile-viz = { cmd = "cmd.exe /c \"set AMENT_PREFIX_PATH=%cd%\\install\\ros2_tactile_robot;%AMENT_PREFIX_PATH% && set ROS_LOCALHOST_ONLY=1 && start /b ros2 run ros2_tactile_robot esp_bridge_node && ros2 run ros2_tactile_robot tactile_finger_gui_node\"", cwd = "Codes/ros2_ws" }
